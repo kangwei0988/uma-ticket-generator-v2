@@ -16,6 +16,7 @@
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 	<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght@700;900&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="./css/style.css">
+	<link rel="stylesheet" href="./css/layout.css">
 </head>
 <body>
 	<main class="app">
@@ -35,7 +36,7 @@
 				<h2>QR Code</h2>
 				<label class="checkbox-label"><input id="customQr" type="checkbox">使用自訂 QR 連結</label>
 				<label id="qrUrlField" class="wide-field">QR 連結<input id="qrUrl" type="url" value="https://youtu.be/dQw4w9WgXcQ?si=jEVltP_GH3UrlKG8" placeholder="https://example.com" disabled></label>
-				<h2>自訂圖片</h2>
+				<h2>自訂圖片（可拖曳圖片位置）</h2>
 				<label class="file-label">上傳圖片<span id="imageFileName"></span><input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp"></label>
 				<button id="removeImage" type="button" disabled>移除圖片</button>
 				<label>比例<output id="imageScaleValue">1.0x</output><input id="imageScale" type="range" min="0.2" max="8" step="0.1" value="1" disabled></label>

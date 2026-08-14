@@ -312,6 +312,7 @@ canvas.addEventListener("pointermove", (event) => {
   render();
 });
 canvas.addEventListener("pointerup", () => { imageDragOffset = null; });
+canvas.addEventListener("pointercancel", () => { imageDragOffset = null; });
 
 async function render() {
   await profanityReady;
