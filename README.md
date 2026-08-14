@@ -1,6 +1,6 @@
 # 馬券生成器 v2
 
-純 HTML、CSS 與 ES module 的 Canvas 馬券生成器。預覽使用 `860 x 540` Canvas，下載時輸出 `1720 x 1080` 的 2 倍 PNG。
+純 HTML、CSS 與 ES module 的 Canvas 馬券生成器。預覽使用 `860 x 540` Canvas，下載時輸出 `2580 x 1620` 的 3 倍 PNG。
 
 `images/URA logo.svg` 會先由瀏覽器載入，再使用 Canvas `drawImage()` 繪製成浮水印，並包含在 PNG 輸出中。
 
@@ -121,7 +121,7 @@ const total = betRules[state.betType](state.amount);
 5. 切換新類型與既有類型時，Canvas 都會重新繪製。
 6. 長文字不會超出設定寬度。
 7. 自訂圖片、QR Code 與浮水印仍然存在。
-8. PNG 下載仍為 `1720 x 1080`，且包含新類型的完整內容。
+8. PNG 下載仍為 `2580 x 1620`，且包含新類型的完整內容。
 9. 在 `http://127.0.0.1:5500/index.html` 重新整理後，瀏覽器 console 沒有錯誤。
 
 ## 檔案結構

@@ -1,7 +1,7 @@
 import QRCode from "https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm";
 
 const canvas = document.querySelector("#ticketCanvas");
-const context = canvas.getContext("2d");
+const context = canvas.getContext("2d", { colorSpace: "srgb" });
 const versionButton = document.querySelector("#versionButton");
 const versionModal = document.querySelector("#versionModal");
 const closeVersionButton = document.querySelector("#closeVersionButton");
@@ -29,8 +29,8 @@ const ticketLayout = {
     plus: { x: 278, y: 180, width: 64, size: 26, weight: 900 },
     placeFirst: { x: 278, y: 220, width: 64, size: 34, weight: 900 },
     placeSecond: { x: 278, y: 260, width: 64, size: 34, weight: 900 },
-    placeLabel: { x: 278, y: 305, width: 64, size: 12, weight: 900 },
-    showLabel: { x: 278, y: 322, width: 64, size: 12, weight: 900 },
+    placeLabel: { x: 278, y: 320, width: 64, size: 12, weight: 900 },
+    showLabel: { x: 278, y: 337, width: 64, size: 12, weight: 900 },
     encouragementBox: { x: 340, y: 25, width: 380, height: 66 },
     encouragement: { x: 530, y: 58, width: 350, size: 48, letterSpacing: 20, scaleY: 0.85 },
     numberBox: { x: 340, y: 137, width: 76, height: 74 },
@@ -134,16 +134,7 @@ function formatEventDate(value) {
 }
 
 function formatRaceNameLines(name) {
-  if (name.length < 10) return [name];
-  const suffixes = ["ステークス", "カップ", "トロフィー", "ダービー", "ハンデキャップ", "クラシック", "シリーズ", "リーグ"];
-  const suffix = suffixes.find((candidate) => name.endsWith(candidate));
-  if (suffix) {
-    const prefix = name.slice(0, -suffix.length);
-    if (prefix.length <= 9) return [prefix, suffix];
-  }
-  const midWord = ["ジュニア", "レディ", "サマー", "オータム", "チャレンジ"].find((candidate) => name.includes(candidate));
-  if (midWord) { const index = name.indexOf(midWord); return [name.slice(0, index), name.slice(index)]; }
-  return suffix ? [name.slice(0, -suffix.length), suffix] : [name];
+  return [name];
 }
 
 function getLegacyTextScale(value, threshold = 6, baseScale = 0.9) {
@@ -210,7 +201,7 @@ function drawCustomImage() {
 }
 
 async function createQrCanvases() {
-  const fixedWebsiteUrl = "https://kangwei0988.github.io/umamusume-ticket-generator/";
+  const fixedWebsiteUrl = "https://kangwei0988.github.io/uma-ticket-generator-v2/";
   const urls = [state.customQr ? state.qrUrl.trim() : fixedWebsiteUrl, fixedWebsiteUrl];
   if (!urls[0]) throw new Error("請輸入 QR 連結。");
   return Promise.all(urls.map(async (url) => {
@@ -225,7 +216,6 @@ function drawTicket(qrCanvases) {
   const bet = betTypeLayouts[state.betType] || betTypeLayouts.ouen;
   const [red, green, blue] = state.themeColor.match(/[0-9a-f]{2}/gi).map((value) => parseInt(value, 16));
   const theme = `rgb(${red}, ${green}, ${blue})`;
-  const themeTransparent = `rgba(${red}, ${green}, ${blue}, ${ticketLayout.watermark.opacity})`;
   const total = state.amount * bet.totalMultiplier;
   const typeCenterX = bet.typeBox.x + bet.typeBox.width / 2;
   const typeTextWidth = bet.typeBox.width - 10;
@@ -234,7 +224,7 @@ function drawTicket(qrCanvases) {
   context.save();
   context.scale(canvas.width / designWidth, canvas.height / designHeight);
   const gradient = context.createLinearGradient(0, 0, designWidth, 0);
-  gradient.addColorStop(0, "#fff"); gradient.addColorStop(0.19, "#fff"); gradient.addColorStop(0.19, themeTransparent); gradient.addColorStop(0.28, themeTransparent); gradient.addColorStop(0.28, "#fff"); gradient.addColorStop(1, "#fff");
+  gradient.addColorStop(0, "#fff"); gradient.addColorStop(0.19, "#fff"); gradient.addColorStop(0.19, theme); gradient.addColorStop(0.28, theme); gradient.addColorStop(0.28, "#fff"); gradient.addColorStop(1, "#fff");
   context.fillStyle = gradient; context.fillRect(0, 0, designWidth, designHeight); context.strokeStyle = theme; context.lineWidth = border.lineWidth; context.strokeRect(border.x, border.y, border.width, border.height);
   if (customImage.layer === "bottom") drawCustomImage();
   drawWatermarks(theme, state.watermarkStyle);
@@ -252,7 +242,7 @@ function drawTicket(qrCanvases) {
   text("単", typeCenterX, bet.singleFirst.y, typeTextWidth, bet.singleFirst.size, { align: "center", font: "Noto Serif JP", weight: bet.singleFirst.weight }); text("勝", typeCenterX, bet.singleSecond.y, typeTextWidth, bet.singleSecond.size, { align: "center", font: "Noto Serif JP", weight: bet.singleSecond.weight });
   if (bet.showEncouragement) { text("＋", typeCenterX, bet.plus.y, typeTextWidth, bet.plus.size, { align: "center", weight: bet.plus.weight }); text("複", typeCenterX, bet.placeFirst.y, typeTextWidth, bet.placeFirst.size, { align: "center", font: "Noto Serif JP", weight: bet.placeFirst.weight }); text("勝", typeCenterX, bet.placeSecond.y, typeTextWidth, bet.placeSecond.size, { align: "center", font: "Noto Serif JP", weight: bet.placeSecond.weight }); text("PLACE", typeCenterX, bet.placeLabel.y, typeTextWidth, bet.placeLabel.size, { align: "center", weight: bet.placeLabel.weight }); text("SHOW", typeCenterX, bet.showLabel.y, typeTextWidth, bet.showLabel.size, { align: "center", weight: bet.showLabel.weight }); outlineBox(bet.encouragementBox.x, bet.encouragementBox.y, bet.encouragementBox.width, bet.encouragementBox.height); text("がんばれ！", bet.encouragement.x, bet.encouragement.y, bet.encouragement.width, bet.encouragement.size, { align: "center", font: "Noto Serif JP", weight: 800, letterSpacing: bet.encouragement.letterSpacing, scaleY: bet.encouragement.scaleY }); }
   outlineBox(bet.numberBox.x, bet.numberBox.y, bet.numberBox.width, bet.numberBox.height); text(String(state.number), bet.number.x, bet.number.y, bet.number.width, bet.number.size, { align: "center", weight: 900 }); text(state.cast, bet.cast.x, bet.cast.y, bet.cast.width, bet.cast.size, { weight: 900, scaleX: getLegacyTextScale(state.cast, 6, 1) }); text(state.character, bet.character.x, bet.character.y, bet.character.width, bet.character.size, { align: bet.character.align, font: "Noto Serif JP", weight: 900, scaleX: getLegacyTextScale(state.character, 10, 1) });
-  text(`各 ☆☆☆ ${state.amount}円`, bet.amount.x, bet.amount.y, bet.amount.width, bet.amount.size, { align: bet.amount.align, font: "Noto Serif JP", weight: 400, scaleX: String(state.amount).length >= 9 ? 0.8888 : 1 }); text(`合計 ★★★★ ${total}円`, bet.total.x, bet.total.y, bet.total.width, bet.total.size, { align: bet.total.align, font: "Noto Serif JP", weight: 400, scaleX: String(total).length >= 9 ? 0.8888 : 1 });
+  text(`各 ☆☆☆ ${state.amount}円`, bet.amount.x, bet.amount.y, bet.amount.width, bet.amount.size, { align: bet.amount.align, font: "Noto Serif JP", weight: 900, scaleX: String(state.amount).length >= 9 ? 0.8888 : 1 }); text(`合計 ★★★★ ${total}円`, bet.total.x, bet.total.y, bet.total.width, bet.total.size, { align: bet.total.align, font: "Noto Serif JP", weight: 900, scaleX: String(total).length >= 9 ? 0.8888 : 1 });
   if (customImage.layer === "top") drawCustomImage();
   context.restore();
 }
@@ -308,26 +298,39 @@ watermark.addEventListener("load", render);
 const downloadToast = document.querySelector("#downloadToast");
 const downloadDetails = document.querySelector("#downloadDetails");
 let toastTimer;
-document.querySelector("#download").addEventListener("click", () => {
-  const exportCanvas = document.createElement("canvas");
-  exportCanvas.width = canvas.width * 2;
-  exportCanvas.height = canvas.height * 2;
-  const exportContext = exportCanvas.getContext("2d");
-  exportContext.imageSmoothingEnabled = true;
-  exportContext.imageSmoothingQuality = "high";
-  exportContext.drawImage(canvas, 0, 0, exportCanvas.width, exportCanvas.height);
-  exportCanvas.toBlob((blob) => {
-  const filename = "uma-ticket@2x.png";
+document.querySelector("#download").addEventListener("click", async () => {
+  const previewWidth = canvas.width;
+  const previewHeight = canvas.height;
+  const outputScale = 3;
+  const outputWidth = previewWidth * outputScale;
+  const outputHeight = previewHeight * outputScale;
+  let blob = null;
+  let qrCanvases;
+  try {
+    qrCanvases = await createQrCanvases();
+    if (document.fonts) await document.fonts.ready;
+    canvas.width = outputWidth;
+    canvas.height = outputHeight;
+    drawTicket(qrCanvases);
+    blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+  } catch (error) {
+    console.error(error);
+  } finally {
+    canvas.width = previewWidth;
+    canvas.height = previewHeight;
+    if (qrCanvases) drawTicket(qrCanvases);
+  }
+  if (!blob) return;
+  const filename = "uma-ticket@3x.png";
   const link = document.createElement("a");
   link.download = filename;
   link.href = URL.createObjectURL(blob);
   link.click();
   URL.revokeObjectURL(link.href);
-  downloadDetails.textContent = `${filename} ・ ${exportCanvas.width} × ${exportCanvas.height} px`;
+  downloadDetails.textContent = `${filename} ・ ${outputWidth} × ${outputHeight} px`;
   downloadToast.classList.add("is-visible");
   downloadToast.setAttribute("aria-hidden", "false");
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { downloadToast.classList.remove("is-visible"); downloadToast.setAttribute("aria-hidden", "true"); }, 3200);
-  }, "image/png");
 });
 render();
