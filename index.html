@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+	<!-- Google tag (gtag.js) -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-4ZP6P4H6L6"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag(){dataLayer.push(arguments);}
+		gtag('js', new Date());
+		gtag('config', 'G-4ZP6P4H6L6');
+	</script>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>馬券生成器</title>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Noto+Serif+JP:wght@700;900&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+	<main class="app">
+		<header>
+			<div class="header-links"><button id="versionButton" class="version-button" type="button">v2.0</button></div>
+			<div><p>UMAMUSUME TICKET MAKER</p><h1>馬券生成器</h1></div>
+			<div class="header-author"><span>TK</span><a href="https://github.com/kangwei0988" target="_blank" rel="noopener noreferrer">作者 @kangwei0988</a></div>
+		</header>
+		<p class="disclaimer">免責事項：本工具為免費工具，禁止用於營利用途。若使用者將本工具用於任何非法行為，相關責任由使用者自行承擔，作者不負任何責任。</p>
+		<div class="layout">
+			<form id="ticketForm">
+				<h2>賽事資訊</h2>
+				<label>發券日<input id="date" type="date" value="2026-08-14"></label><label>場地<input id="venue" value="台灣"></label><label>場次編號<input id="raceNumber" value="11"></label><label>賽事名稱<input id="raceName" value="7th世界巡迴台灣場"></label><label>等級<input id="grade" value="(G1)"></label><label>背景顏色<input id="themeColor" type="color" value="#e2efdf"></label><label>浮水印款式<select id="watermarkStyle"><option value="none">無</option><option value="ura">URA</option></select></label>
+				<h2>投注內容</h2>
+				<label>投注類型<select id="betType"><option value="ouen">應援券・單＋複</option><option value="tansho">單勝</option></select></label><label>號碼<input id="number" type="number" value="1" min="1"></label><label>單張金額<input id="amount" type="number" value="100" min="100" step="100"></label><label>演員／標示<input id="cast" value="羊宮妃娜"></label><label>角色名稱<input id="character" value="謀勇兼備役"></label><label>馬券標示<input id="makerLabel" value="來玩賽馬娘"></label>
+				<h2>QR Code</h2>
+				<label class="checkbox-label"><input id="customQr" type="checkbox">使用自訂 QR 連結</label>
+				<label id="qrUrlField" class="wide-field">QR 連結<input id="qrUrl" type="url" value="https://youtu.be/dQw4w9WgXcQ?si=jEVltP_GH3UrlKG8" placeholder="https://example.com" disabled></label>
+				<h2>自訂圖片</h2>
+				<label class="file-label">上傳圖片<input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp"></label>
+				<button id="removeImage" type="button" disabled>移除圖片</button>
+				<label>比例<output id="imageScaleValue">1.0x</output><input id="imageScale" type="range" min="0.2" max="4" step="0.1" value="1" disabled></label>
+				<label>旋轉<output id="imageRotationValue">0°</output><input id="imageRotation" type="range" min="-180" max="180" step="1" value="0" disabled></label>
+				<label>透明度<output id="imageOpacityValue">100%</output><input id="imageOpacity" type="range" min="0" max="1" step="0.05" value="1" disabled></label>
+				<label>圖層<select id="imageLayer" disabled><option value="top">最上層</option><option value="bottom">最下層</option></select></label>
+				<button id="download" type="button">下載 PNG</button>
+			</form>
+			<section class="preview"><h2>即時預覽</h2><canvas id="ticketCanvas" width="860" height="540"></canvas></section>
+		</div>
+	</main>
+	<div id="downloadToast" class="download-toast" role="status" aria-live="polite" aria-hidden="true">
+		<strong>PNG 已下載</strong>
+		<span id="downloadDetails"></span>
+	</div>
+	<div id="versionModal" class="version-modal" role="dialog" aria-modal="true" aria-labelledby="versionTitle" aria-hidden="true">
+		<div class="version-dialog">
+			<h2 id="versionTitle">版本更新紀錄</h2>
+			<section><h3>v2.0</h3><ul><li>因原專案設計不符合未來功能開發方向，因此重建專案。</li><li>改用 Canvas 產生馬券預覽與 PNG。</li><li>新增自訂 QR Code、圖片控制與浮水印款式。</li><li>支援 860 x 540 預覽與 2 倍 PNG 輸出。</li><li>投注類型使用獨立排版設定，方便後續擴充。</li></ul></section>
+			<section><h3>v1.0</h3><p>提供馬券內容編輯、即時預覽與 PNG 下載功能。</p></section>
+			<button id="closeVersionButton" type="button">關閉</button>
+		</div>
+	</div>
+	<script type="module" src="./js/app.js"></script>
+</body>
+</html>
