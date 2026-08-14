@@ -40,7 +40,7 @@ const ticketLayout = {
     amount: { x: 720, y: 365, width: 330, size: 28, align: "right" },
     total: { x: 720, y: 422, width: 330, size: 28, align: "right" }
   },
-  watermark: { startX: 350, startY: 25, columnGap: 185, rowGap: 170, rowOffset: 60, width: 100, height: 113, rows: 3, columns: 3, opacity: 0.45 },
+  watermark: { startX: 290, startY: 25, columnGap: 185, rowGap: 170, rowOffset: 60, width: 100, height: 113, rows: 3, columns: 3, opacity: 0.45 },
   customImage: { x: 330, y: 360, baseWidth: 100 }
 };
 const betTypeLayouts = {
@@ -271,6 +271,7 @@ function drawTicket(qrCanvases) {
 
 const imageInput = document.querySelector("#imageInput");
 const removeImage = document.querySelector("#removeImage");
+const imageFileName = document.querySelector("#imageFileName");
 const imageControls = [
   ["imageScale", "scale", (value) => `${Number(value).toFixed(1)}x`],
   ["imageRotation", "rotation", (value) => `${value}°`],
@@ -281,6 +282,7 @@ function setImageControls(enabled) { imageControls.forEach(([id]) => { document.
 imageInput.addEventListener("change", (event) => {
   const file = event.target.files?.[0];
   if (!file) return;
+  imageFileName.textContent = file.name.length > 7 ? `${file.name.slice(0, 7)}...` : file.name;
   const reader = new FileReader();
   reader.addEventListener("load", () => {
     const loadedImage = new Image();
@@ -289,7 +291,7 @@ imageInput.addEventListener("change", (event) => {
   });
   reader.readAsDataURL(file);
 });
-removeImage.addEventListener("click", () => { customImage.element = null; imageInput.value = ""; setImageControls(false); render(); });
+removeImage.addEventListener("click", () => { customImage.element = null; imageInput.value = ""; imageFileName.textContent = ""; setImageControls(false); render(); });
 imageControls.forEach(([id, key, format]) => { document.querySelector(`#${id}`).addEventListener("input", (event) => { customImage[key] = key === "layer" ? event.target.value : Number(event.target.value); document.querySelector(`#${key === "scale" ? "imageScaleValue" : key === "rotation" ? "imageRotationValue" : "imageOpacityValue"}`).textContent = format(event.target.value); render(); }); });
 function syncImageControls() { document.querySelector("#imageScale").value = customImage.scale; document.querySelector("#imageRotation").value = customImage.rotation; document.querySelector("#imageOpacity").value = customImage.opacity; document.querySelector("#imageLayer").value = customImage.layer; document.querySelector("#imageScaleValue").textContent = `${customImage.scale.toFixed(1)}x`; document.querySelector("#imageRotationValue").textContent = `${customImage.rotation}°`; document.querySelector("#imageOpacityValue").textContent = `${Math.round(customImage.opacity * 100)}%`; }
 
@@ -321,6 +323,9 @@ watermark.addEventListener("load", render);
 const downloadToast = document.querySelector("#downloadToast");
 const downloadDetails = document.querySelector("#downloadDetails");
 let toastTimer;
+function sanitizeFilenamePart(value) {
+  return String(value || "未命名").replace(/[<>:"/\\|?*\x00-\x1F]/g, "_").replace(/\s+/g, " ").trim().slice(0, 80) || "未命名";
+}
 document.querySelector("#download").addEventListener("click", async () => {
   await profanityReady;
   const previewWidth = canvas.width;
@@ -345,7 +350,7 @@ document.querySelector("#download").addEventListener("click", async () => {
     if (qrCanvases) drawTicket(qrCanvases);
   }
   if (!blob) return;
-  const filename = "uma-ticket@3x.png";
+  const filename = `umaticket-${sanitizeFilenamePart(state.raceName)}-${sanitizeFilenamePart(state.cast)}.png`;
   const link = document.createElement("a");
   link.download = filename;
   link.href = URL.createObjectURL(blob);
