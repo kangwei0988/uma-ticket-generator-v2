@@ -101,7 +101,6 @@ function text(value, x, y, width, size, options = {}) {
     const characters = [...(value || "")];
     const spacing = options.letterSpacing;
     const textWidth = characters.reduce((total, character) => total + context.measureText(character).width, 0) + spacing * Math.max(0, characters.length - 1);
-    let cursor = options.align === "center" ? x - textWidth / 2 : options.align === "right" ? x - textWidth : x;
     context.save();
     context.translate(x, y);
     context.scale(scaleX, scaleY);
@@ -135,15 +134,6 @@ function formatEventDate(value) {
 }
 
 function formatRaceNameLines(name) {
-  const specialBreaks = {
-    "日本ダービー（東京優駿）": ["日本ダービー", "(東京優駿)"],
-    "サウジアラビアロイヤルカップ": ["サウジアラビア", "ロイヤルカップ"],
-    "朝日杯フューチュリティステークス": ["朝日杯", "フューチュリティS"],
-    "阪神ジュベナイルフィリーズ": ["阪神ジュベナイル", "フィリーズ"],
-    "マイルチャンピオンシップ南部杯": ["マイルチャンピオン", "シップ南部杯"],
-    "マイルチャンピオンシップ": ["マイル", "チャンピオンシップ"]
-  };
-  if (specialBreaks[name]) return specialBreaks[name];
   if (name.length < 10) return [name];
   const suffixes = ["ステークス", "カップ", "トロフィー", "ダービー", "ハンデキャップ", "クラシック", "シリーズ", "リーグ"];
   const suffix = suffixes.find((candidate) => name.endsWith(candidate));
@@ -236,7 +226,6 @@ function drawTicket(qrCanvases) {
   const [red, green, blue] = state.themeColor.match(/[0-9a-f]{2}/gi).map((value) => parseInt(value, 16));
   const theme = `rgb(${red}, ${green}, ${blue})`;
   const themeTransparent = `rgba(${red}, ${green}, ${blue}, ${ticketLayout.watermark.opacity})`;
-  const dark = `rgb(${Math.max(0, red - 42)}, ${Math.max(0, green - 42)}, ${Math.max(0, blue - 42)})`;
   const total = state.amount * bet.totalMultiplier;
   const typeCenterX = bet.typeBox.x + bet.typeBox.width / 2;
   const typeTextWidth = bet.typeBox.width - 10;
