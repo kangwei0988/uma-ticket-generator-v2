@@ -1,5 +1,7 @@
 # 馬券生成器 v2
 
+目前版本：`v2.1`
+
 純 HTML、CSS 與 ES module 的 Canvas 馬券生成器。預覽使用 `860 x 540` Canvas，下載時輸出 `2580 x 1620` 的 3 倍 PNG。
 
 `images/URA logo.svg` 會先由瀏覽器載入，再使用 Canvas `drawImage()` 繪製成浮水印，並包含在 PNG 輸出中。
@@ -12,6 +14,12 @@
 - 固定或自訂 QR Code
 - 自訂圖片：上傳、移除、縮放、旋轉、透明度、圖層與拖曳
 - PNG 下載完成提示
+
+## 敏感文字過濾
+
+本專案使用 `data/profanity/zh.txt`、`ja.txt` 與 `en.txt` 載入多語言敏感詞清單。這些清單參考 [LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words](https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words)，原專案採用 Creative Commons Attribution 4.0 International（CC BY 4.0）授權。
+
+命中清單的文字會在表單輸入時以 `*` 取代，不會阻擋預覽或 PNG 下載。這是純前端的內容過濾，使用者仍可透過開發者工具繞過，因此不應視為後端安全機制。
 
 ## 新增投注類型
 

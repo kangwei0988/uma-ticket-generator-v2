@@ -70,6 +70,28 @@ const state = {
   date: "2026-08-14", venue: "台灣", raceNumber: "11", raceName: "7th世界巡迴台灣場", grade: "(G1)",
   betType: "ouen", number: 1, amount: 100, cast: "羊宮妃娜", character: "謀勇兼備役", makerLabel: "來玩賽馬娘", themeColor: "#e2efdf", watermarkStyle: "none", customQr: false, qrUrl: "https://youtu.be/dQw4w9WgXcQ?si=jEVltP_GH3UrlKG8"
 };
+const textInputKeys = ["venue", "raceName", "grade", "cast", "character", "makerLabel"];
+let blockedWords = [];
+
+async function loadBlockedWords() {
+  const files = ["zh.txt", "ja.txt", "en.txt"];
+  const lists = await Promise.all(files.map((file) => fetch(`./data/profanity/${file}`).then((response) => {
+    if (!response.ok) throw new Error(`無法載入敏感詞清單：${file}`);
+    return response.text();
+  })));
+  blockedWords = [...new Set(lists.flatMap((content) => content.split(/\r?\n/).map((word) => word.trim()).filter(Boolean)))].sort((a, b) => [...b].length - [...a].length);
+}
+
+function maskBlockedText(value) {
+  let masked = String(value || "");
+  for (const word of blockedWords) {
+    const characters = [...word].map((character) => character.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    if (!characters.length) continue;
+    const pattern = new RegExp(characters.join("[\\s\\p{P}\\p{S}]*"), "giu");
+    masked = masked.replace(pattern, (match) => "*".repeat([...match].length));
+  }
+  return masked;
+}
 
 function closeVersionModal() { versionModal.classList.remove("is-visible"); versionModal.setAttribute("aria-hidden", "true"); }
 versionButton.addEventListener("click", () => { versionModal.classList.add("is-visible"); versionModal.setAttribute("aria-hidden", "false"); });
@@ -82,7 +104,7 @@ document.addEventListener("keydown", (event) => { if (event.key === "Escape") cl
 ].forEach((id) => {
   const input = document.querySelector(`#${id}`);
   input.value = state[id];
-  input.addEventListener("input", () => { state[id] = input.type === "number" ? Number(input.value) : input.value; render(); });
+  input.addEventListener("input", () => { const value = input.type === "number" ? Number(input.value) : textInputKeys.includes(id) ? maskBlockedText(input.value) : input.value; if (textInputKeys.includes(id)) input.value = value; state[id] = value; render(); });
 });
 
 const customQrInput = document.querySelector("#customQr");
@@ -290,6 +312,7 @@ canvas.addEventListener("pointermove", (event) => {
 canvas.addEventListener("pointerup", () => { imageDragOffset = null; });
 
 async function render() {
+  await profanityReady;
   try { const qrCanvases = await createQrCanvases(); if (document.fonts) { await Promise.all([document.fonts.load('400 19px "Noto Serif JP"'), document.fonts.load('700 29px "Noto Serif JP"'), document.fonts.load('900 34px "Noto Sans JP"')]); await document.fonts.ready; } drawTicket(qrCanvases); }
   catch (error) { console.error(error); }
 }
@@ -299,6 +322,7 @@ const downloadToast = document.querySelector("#downloadToast");
 const downloadDetails = document.querySelector("#downloadDetails");
 let toastTimer;
 document.querySelector("#download").addEventListener("click", async () => {
+  await profanityReady;
   const previewWidth = canvas.width;
   const previewHeight = canvas.height;
   const outputScale = 3;
@@ -333,4 +357,5 @@ document.querySelector("#download").addEventListener("click", async () => {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => { downloadToast.classList.remove("is-visible"); downloadToast.setAttribute("aria-hidden", "true"); }, 3200);
 });
+const profanityReady = loadBlockedWords().catch((error) => { console.error(error); blockedWords = []; });
 render();
