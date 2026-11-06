@@ -43,6 +43,26 @@ const ticketLayout = {
   watermark: { startX: 290, startY: 25, columnGap: 185, rowGap: 170, rowOffset: 60, width: 100, height: 113, rows: 3, columns: 3, opacity: 0.45 },
   customImage: { x: 330, y: 360, baseWidth: 100 }
 };
+const tanshoLayout = {
+  ...ticketLayout.bet,
+  showWin: true,
+  showWinBottom: true,
+  winBottom: { x: 278, y: 330, width: 64, size: 14, weight: 900 },
+  typeBox: { ...ticketLayout.bet.typeBox, height: 330 },
+  singleFirst: { ...ticketLayout.bet.singleFirst, y: 170 },
+  singleSecond: { ...ticketLayout.bet.singleSecond, y: 210 },
+  showEncouragement: false,
+  totalMultiplier: 1
+};
+function createMultiTanshoRow(y) {
+  return {
+    numberBox: { x: 340, y, width: 76, height: 58 },
+    number: { x: 378, y: y + 29, width: 64, size: 34 },
+    cast: { x: 430, y: y + 24, width: 280, size: 29 },
+    character: { x: 430, y: y + 50, width: 280, size: 20 },
+    amount: { x: 720, y: y + 81, width: 330, size: 25, align: "right" }
+  };
+}
 const betTypeLayouts = {
   ouen: {
     ...ticketLayout.bet,
@@ -51,26 +71,28 @@ const betTypeLayouts = {
     showEncouragement: true,
     totalMultiplier: 2
   },
-  tansho: {
-    ...ticketLayout.bet,
-    showWin: true,
-    showWinBottom: true,
-    winBottom: { x: 278, y: 330, width: 64, size: 14, weight: 900 },
-    typeBox: { ...ticketLayout.bet.typeBox, height: 330 },
-    singleFirst: { ...ticketLayout.bet.singleFirst, y: 170 },
-    singleSecond: { ...ticketLayout.bet.singleSecond, y: 210 },
-    showEncouragement: false,
-    totalMultiplier: 1
+  tansho: tanshoLayout,
+  multiTansho: {
+    ...tanshoLayout,
+    showMultipleEntries: true,
+    multiRows: {
+      2: [createMultiTanshoRow(100), createMultiTanshoRow(230)],
+      3: [createMultiTanshoRow(35), createMultiTanshoRow(150), createMultiTanshoRow(265)]
+    },
+    multiTotal: {
+      2: { x: 720, y: 435, width: 330, size: 28, align: "right" },
+      3: { x: 720, y: 435, width: 330, size: 28, align: "right" }
+    }
   }
 };
 const watermark = new Image();
 watermark.src = "./images/URA%20logo.svg";
 const customImage = { element: null, x: ticketLayout.customImage.x, y: ticketLayout.customImage.y, scale: 1, rotation: 0, opacity: 1, layer: "top" };
 const state = {
-  date: "2026-08-14", venue: "台灣", raceNumber: "11", raceName: "7th世界巡迴台灣場", grade: "(G1)",
-  betType: "ouen", number: 1, amount: 100, cast: "羊宮妃娜", character: "謀勇兼備役", makerLabel: "來玩賽馬娘", themeColor: "#e2efdf", watermarkStyle: "none", customQr: false, qrUrl: "https://youtu.be/dQw4w9WgXcQ?si=jEVltP_GH3UrlKG8"
+  date: "2026-08-14", showIssueDate: true, venue: "台灣", raceNumber: "11", raceName: "7th世界巡迴台灣場", grade: "(G1)",
+  betType: "ouen", number: 1, amount: 100, cast: "羊宮妃娜", character: "謀勇兼備役", encouragementText: "がんばれ！", multiEntries: [{ number: "1", amount: "100", cast: "羊宮妃娜", character: "謀勇兼備役" }, { number: "2", amount: "200", cast: "石原夏織", character: "杏目役" }, { number: "3", amount: "300", cast: "前田佳織里", character: "優秀素質役" }], showThirdEntry: false, makerLabel: "來玩賽馬娘", themeColor: "#e2efdf", watermarkStyle: "none", customQr: false, qrUrl: "https://youtu.be/dQw4w9WgXcQ?si=jEVltP_GH3UrlKG8"
 };
-const textInputKeys = ["venue", "raceName", "grade", "cast", "character", "makerLabel"];
+const textInputKeys = ["venue", "raceName", "grade", "cast", "character", "encouragementText", "makerLabel"];
 let blockedWords = [];
 
 async function loadBlockedWords() {
@@ -99,13 +121,59 @@ closeVersionButton.addEventListener("click", closeVersionModal);
 versionModal.addEventListener("click", (event) => { if (event.target === versionModal) closeVersionModal(); });
 document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeVersionModal(); });
 
+const showIssueDateInput = document.querySelector("#showIssueDate");
+showIssueDateInput.checked = state.showIssueDate;
+showIssueDateInput.addEventListener("change", () => { state.showIssueDate = showIssueDateInput.checked; render(); });
+
+const singleBetFields = ["singleNumberField", "singleAmountField", "singleCastField", "singleCharacterField"].map((id) => document.querySelector(`#${id}`));
+const encouragementTextField = document.querySelector("#encouragementTextField");
+const multiEntryLabels = [...document.querySelectorAll(".multi-entry-field")];
+const multiEntryGroups = Array.from({ length: 3 }, (_, index) => {
+  const group = document.createElement("fieldset");
+  group.style.cssText = "display:none;grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;border:1px solid #d9e0db;border-radius:3px;padding:10px;min-width:0";
+  const legend = document.createElement("legend");
+  legend.textContent = `第 ${index + 1} 注`;
+  const fields = multiEntryLabels.slice(index * 4, index * 4 + 4);
+  fields[0].before(group);
+  group.append(legend, ...fields);
+  return group;
+});
+const thirdEntryToggleLabel = document.createElement("label");
+thirdEntryToggleLabel.className = "checkbox-label";
+const thirdEntryToggle = document.createElement("input");
+thirdEntryToggle.type = "checkbox";
+thirdEntryToggle.checked = state.showThirdEntry;
+thirdEntryToggleLabel.append(thirdEntryToggle, document.createTextNode("顯示第三注"));
+multiEntryGroups[2].before(thirdEntryToggleLabel);
+function syncBetFields() {
+  const isMultiTansho = state.betType === "multiTansho";
+  singleBetFields.forEach((field) => { field.style.display = isMultiTansho ? "none" : "grid"; });
+  encouragementTextField.style.display = state.betType === "ouen" ? "grid" : "none";
+  thirdEntryToggleLabel.style.display = isMultiTansho ? "flex" : "none";
+  multiEntryGroups.forEach((group, index) => { group.style.display = isMultiTansho && (index < 2 || state.showThirdEntry) ? "grid" : "none"; });
+}
+thirdEntryToggle.addEventListener("change", () => { state.showThirdEntry = thirdEntryToggle.checked; syncBetFields(); render(); });
+
 [
-  "date", "venue", "raceNumber", "raceName", "grade", "betType", "number", "amount", "cast", "character", "makerLabel", "themeColor", "watermarkStyle"
+  "date", "venue", "raceNumber", "raceName", "grade", "betType", "number", "amount", "cast", "character", "encouragementText", "makerLabel", "themeColor", "watermarkStyle"
 ].forEach((id) => {
   const input = document.querySelector(`#${id}`);
   input.value = state[id];
-  input.addEventListener("input", () => { const value = input.type === "number" ? Number(input.value) : textInputKeys.includes(id) ? maskBlockedText(input.value) : input.value; if (textInputKeys.includes(id)) input.value = value; state[id] = value; render(); });
+  input.addEventListener("input", () => { const value = input.type === "number" ? Number(input.value) : textInputKeys.includes(id) ? maskBlockedText(input.value) : input.value; if (textInputKeys.includes(id)) input.value = value; state[id] = value; if (id === "betType") syncBetFields(); render(); });
 });
+
+state.multiEntries.forEach((entry, index) => {
+  [["number", entry.number], ["amount", entry.amount], ["cast", entry.cast], ["character", entry.character]].forEach(([key]) => {
+    const input = document.querySelector(`#multi${key[0].toUpperCase()}${key.slice(1)}${index + 1}`);
+    input.value = entry[key];
+    input.addEventListener("input", () => {
+      entry[key] = input.type === "number" ? input.value : maskBlockedText(input.value);
+      if (input.type !== "number") input.value = entry[key];
+      render();
+    });
+  });
+});
+syncBetFields();
 
 const customQrInput = document.querySelector("#customQr");
 const qrUrlInput = document.querySelector("#qrUrl");
@@ -151,8 +219,15 @@ function outlineBox(x, y, width, height) {
 }
 
 function formatEventDate(value) {
+  if (!value) return "年月日";
   const [year, month, day] = value.split("-");
   return `${year}年${Number(month)}月${Number(day)}日`;
+}
+
+function formatIssueDate(value) {
+  if (!value) return "";
+  const [, month, day] = value.split("-");
+  return `${Number(month)}月${Number(day)}日`;
 }
 
 function formatRaceNameLines(name) {
@@ -238,7 +313,8 @@ function drawTicket(qrCanvases) {
   const bet = betTypeLayouts[state.betType] || betTypeLayouts.ouen;
   const [red, green, blue] = state.themeColor.match(/[0-9a-f]{2}/gi).map((value) => parseInt(value, 16));
   const theme = `rgb(${red}, ${green}, ${blue})`;
-  const total = state.amount * bet.totalMultiplier;
+  const multiEntryCount = state.showThirdEntry ? 3 : 2;
+  const total = bet.showMultipleEntries ? state.multiEntries.slice(0, multiEntryCount).reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0) : state.amount * bet.totalMultiplier;
   const typeCenterX = bet.typeBox.x + bet.typeBox.width / 2;
   const typeTextWidth = bet.typeBox.width - 10;
   context.setTransform(1, 0, 0, 1, 0, 0);
@@ -250,7 +326,7 @@ function drawTicket(qrCanvases) {
   context.fillStyle = gradient; context.fillRect(0, 0, designWidth, designHeight); context.strokeStyle = theme; context.lineWidth = border.lineWidth; context.strokeRect(border.x, border.y, border.width, border.height);
   if (customImage.layer === "bottom") drawCustomImage();
   drawWatermarks(theme, state.watermarkStyle);
-  text(formatEventDate(state.date), left.date.x, left.date.y, left.date.width, left.date.size, { font: "Noto Serif JP", weight: 400 }); text(state.venue, left.venue.x, left.venue.y, left.venue.width, left.venue.size, { font: "Noto Serif JP", weight: 800 });
+  if (state.showIssueDate) text(formatEventDate(state.date), left.date.x, left.date.y, left.date.width, left.date.size, { font: "Noto Serif JP", weight: 400 }); text(state.venue, left.venue.x, left.venue.y, left.venue.width, left.venue.size, { font: "Noto Serif JP", weight: 800 });
   context.fillStyle = "#000"; context.fillRect(left.raceNumberBox.x, left.raceNumberBox.y, left.raceNumberBox.width, left.raceNumberBox.height); text(String(state.raceNumber), left.raceNumber.x, left.raceNumber.y, left.raceNumber.width, left.raceNumber.size, { align: "center", color: "#fff", weight: 800 }); text("レース", left.raceLabel.x, left.raceLabel.y, left.raceLabel.width, left.raceLabel.size, { font: "Noto Serif JP", weight: 800 });
   const raceLines = formatRaceNameLines(state.raceName).flatMap((line) => wrapCanvasText(line, left.raceName.width, left.raceName.size));
   raceLines.forEach((line, index) => text(line, left.raceName.x, left.raceName.y + index * left.raceName.lineHeight, left.raceName.width, left.raceName.size, { font: "Noto Serif JP", weight: 900 }));
@@ -259,12 +335,25 @@ function drawTicket(qrCanvases) {
   left.qr.forEach((position, index) => { context.fillStyle = "#fff"; context.fillRect(position.x, position.y, position.size, position.size); context.drawImage(qrCanvases[index], position.x, position.y, position.size, position.size); });
   const makerLines = wrapCanvasText(state.makerLabel, left.makerLabel.width, left.makerLabel.size, "Noto Serif JP", 400);
   makerLines.forEach((line, index) => { const y = left.makerLabel.y - (makerLines.length - 1 - index) * left.makerLabel.lineHeight; text(line, left.makerLabel.x, y, left.makerLabel.width, left.makerLabel.size, { font: "Noto Serif JP", weight: 400, color: "#000000" }); });
-  text(`${Number(state.date.slice(5, 7))}月${Number(state.date.slice(8, 10))}日`, left.issueDate.x, left.issueDate.y, left.issueDate.width, left.issueDate.size, { font: "Noto Serif JP", weight: 400 });
+  if (state.showIssueDate && state.date) text(formatIssueDate(state.date), left.issueDate.x, left.issueDate.y, left.issueDate.width, left.issueDate.size, { font: "Noto Serif JP", weight: 400 });
   outlineBox(bet.typeBox.x, bet.typeBox.y, bet.typeBox.width, bet.typeBox.height); if (bet.showWin) text("WIN", typeCenterX, bet.win.y, typeTextWidth, bet.win.size, { align: "center", weight: bet.win.weight }); if (bet.showWinBottom && bet.winBottom) text("WIN", typeCenterX, bet.winBottom.y, typeTextWidth, bet.winBottom.size, { align: "center", weight: bet.winBottom.weight });
   text("単", typeCenterX, bet.singleFirst.y, typeTextWidth, bet.singleFirst.size, { align: "center", font: "Noto Serif JP", weight: bet.singleFirst.weight }); text("勝", typeCenterX, bet.singleSecond.y, typeTextWidth, bet.singleSecond.size, { align: "center", font: "Noto Serif JP", weight: bet.singleSecond.weight });
-  if (bet.showEncouragement) { text("＋", typeCenterX, bet.plus.y, typeTextWidth, bet.plus.size, { align: "center", weight: bet.plus.weight }); text("複", typeCenterX, bet.placeFirst.y, typeTextWidth, bet.placeFirst.size, { align: "center", font: "Noto Serif JP", weight: bet.placeFirst.weight }); text("勝", typeCenterX, bet.placeSecond.y, typeTextWidth, bet.placeSecond.size, { align: "center", font: "Noto Serif JP", weight: bet.placeSecond.weight }); text("PLACE", typeCenterX, bet.placeLabel.y, typeTextWidth, bet.placeLabel.size, { align: "center", weight: bet.placeLabel.weight }); text("SHOW", typeCenterX, bet.showLabel.y, typeTextWidth, bet.showLabel.size, { align: "center", weight: bet.showLabel.weight }); outlineBox(bet.encouragementBox.x, bet.encouragementBox.y, bet.encouragementBox.width, bet.encouragementBox.height); text("がんばれ！", bet.encouragement.x, bet.encouragement.y, bet.encouragement.width, bet.encouragement.size, { align: "center", font: "Noto Serif JP", weight: 800, letterSpacing: bet.encouragement.letterSpacing, scaleY: bet.encouragement.scaleY }); }
-  outlineBox(bet.numberBox.x, bet.numberBox.y, bet.numberBox.width, bet.numberBox.height); text(String(state.number), bet.number.x, bet.number.y, bet.number.width, bet.number.size, { align: "center", weight: 900 }); text(state.cast, bet.cast.x, bet.cast.y, bet.cast.width, bet.cast.size, { weight: 900, scaleX: getLegacyTextScale(state.cast, 6, 1) }); text(state.character, bet.character.x, bet.character.y, bet.character.width, bet.character.size, { align: bet.character.align, font: "Noto Serif JP", weight: 900, scaleX: getLegacyTextScale(state.character, 10, 1) });
-  text(`各 ☆☆☆ ${state.amount}円`, bet.amount.x, bet.amount.y, bet.amount.width, bet.amount.size, { align: bet.amount.align, font: "Noto Serif JP", weight: 900, scaleX: String(state.amount).length >= 9 ? 0.8888 : 1 }); text(`合計 ★★★★ ${total}円`, bet.total.x, bet.total.y, bet.total.width, bet.total.size, { align: bet.total.align, font: "Noto Serif JP", weight: 900, scaleX: String(total).length >= 9 ? 0.8888 : 1 });
+  if (bet.showEncouragement) { text("＋", typeCenterX, bet.plus.y, typeTextWidth, bet.plus.size, { align: "center", weight: bet.plus.weight }); text("複", typeCenterX, bet.placeFirst.y, typeTextWidth, bet.placeFirst.size, { align: "center", font: "Noto Serif JP", weight: bet.placeFirst.weight }); text("勝", typeCenterX, bet.placeSecond.y, typeTextWidth, bet.placeSecond.size, { align: "center", font: "Noto Serif JP", weight: bet.placeSecond.weight }); text("PLACE", typeCenterX, bet.placeLabel.y, typeTextWidth, bet.placeLabel.size, { align: "center", weight: bet.placeLabel.weight }); text("SHOW", typeCenterX, bet.showLabel.y, typeTextWidth, bet.showLabel.size, { align: "center", weight: bet.showLabel.weight }); outlineBox(bet.encouragementBox.x, bet.encouragementBox.y, bet.encouragementBox.width, bet.encouragementBox.height); text(state.encouragementText, bet.encouragement.x, bet.encouragement.y, bet.encouragement.width, bet.encouragement.size, { align: "center", font: "Noto Serif JP", weight: 800, letterSpacing: bet.encouragement.letterSpacing, scaleY: bet.encouragement.scaleY, scaleX: getLegacyTextScale(state.encouragementText, 6, 1) }); }
+  if (bet.showMultipleEntries) {
+    state.multiEntries.slice(0, multiEntryCount).forEach((entry, index) => {
+      const row = bet.multiRows[multiEntryCount][index];
+      if (entry.number) { outlineBox(row.numberBox.x, row.numberBox.y, row.numberBox.width, row.numberBox.height); text(String(entry.number), row.number.x, row.number.y, row.number.width, row.number.size, { align: "center", weight: 900 }); }
+      if (entry.cast) text(entry.cast, row.cast.x, row.cast.y, row.cast.width, row.cast.size, { weight: 900, scaleX: getLegacyTextScale(entry.cast, 10, 1) });
+      if (entry.character) text(entry.character, row.character.x, row.character.y, row.character.width, row.character.size, { font: "Noto Serif JP", weight: 900, scaleX: getLegacyTextScale(entry.character, 16, 1) });
+      if (entry.amount) text(`☆☆☆ ${entry.amount}円`, row.amount.x, row.amount.y, row.amount.width, row.amount.size, { align: row.amount.align, font: "Noto Serif JP", weight: 900, scaleX: String(entry.amount).length >= 9 ? 0.8888 : 1 });
+    });
+    const multiTotal = bet.multiTotal[multiEntryCount];
+    text(`合計 ★★★ ${total}円`, multiTotal.x, multiTotal.y, multiTotal.width, multiTotal.size, { align: multiTotal.align, font: "Noto Serif JP", weight: 900, scaleX: String(total).length >= 9 ? 0.8888 : 1 });
+  } else {
+    outlineBox(bet.numberBox.x, bet.numberBox.y, bet.numberBox.width, bet.numberBox.height); text(String(state.number), bet.number.x, bet.number.y, bet.number.width, bet.number.size, { align: "center", weight: 900 });
+    text(state.cast, bet.cast.x, bet.cast.y, bet.cast.width, bet.cast.size, { weight: 900, scaleX: getLegacyTextScale(state.cast, 6, 1) }); text(state.character, bet.character.x, bet.character.y, bet.character.width, bet.character.size, { align: bet.character.align, font: "Noto Serif JP", weight: 900, scaleX: getLegacyTextScale(state.character, 10, 1) });
+    text(`各 ☆☆☆ ${state.amount}円`, bet.amount.x, bet.amount.y, bet.amount.width, bet.amount.size, { align: bet.amount.align, font: "Noto Serif JP", weight: 900, scaleX: String(state.amount).length >= 9 ? 0.8888 : 1 }); text(`合計 ★★★★ ${total}円`, bet.total.x, bet.total.y, bet.total.width, bet.total.size, { align: bet.total.align, font: "Noto Serif JP", weight: 900, scaleX: String(total).length >= 9 ? 0.8888 : 1 });
+  }
   if (customImage.layer === "top") drawCustomImage();
   context.restore();
 }
@@ -351,7 +440,8 @@ document.querySelector("#download").addEventListener("click", async () => {
     if (qrCanvases) drawTicket(qrCanvases);
   }
   if (!blob) return;
-  const filename = `umaticket-${sanitizeFilenamePart(state.raceName)}-${sanitizeFilenamePart(state.cast)}.png`;
+  const castName = state.betType === "multiTansho" ? state.multiEntries.map((entry) => entry.cast).filter(Boolean).join("-") : state.cast;
+  const filename = `umaticket-${sanitizeFilenamePart(state.raceName)}-${sanitizeFilenamePart(castName)}.png`;
   const link = document.createElement("a");
   link.download = filename;
   link.href = URL.createObjectURL(blob);
